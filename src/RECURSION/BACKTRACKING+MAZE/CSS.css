@@ -1,0 +1,19 @@
+body {
+    background-color: #f0f8ff; /* Light blue background */
+    font-family: Arial, sans-serif; /* Modern font */
+    margin: 0;
+    padding: 0;
+    text-align: center; /* Center-align content */
+}
+
+h1 {
+    color: #4caf50; /* Green heading color */
+    margin-top: 50px; /* Space from the top */
+    font-size: 36px; /* Bigger font for heading */
+}
+
+p {
+    color: #555555; /* Gray color for text */
+    font-size: 18px; /* Text size */
+    margin-top: 20px; /* Space after the heading */
+}
