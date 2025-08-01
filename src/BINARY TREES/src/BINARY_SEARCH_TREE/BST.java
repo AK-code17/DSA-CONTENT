@@ -15,12 +15,24 @@ public class BST {
             return value;
         }
 
+        public Node getLeft(){
+            return this.left;
+        }
+        
+        public Node getRight(){
+            return this.right;
+        }
+
     }
 
     private Node root;
 
     public BST(){
 
+    }
+
+    protected Node getRoot(){
+        return root;
     }
 
     public int height(Node node){
@@ -41,7 +53,21 @@ public class BST {
             insert(ele);
         }
     }
+
+    public void insertSorted(int[] nums){
+        sorted_insert(nums,0,nums.length-1) ; 
+    }
     
+
+    private void sorted_insert(int[] nums, int start, int end) {
+        if(start>end) return;
+
+        int mid = (start + end) /2;
+
+        this.insert(nums[mid]);
+        sorted_insert(nums, start, mid-1);
+        sorted_insert(nums, mid+1, end);
+    }
 
     private Node insert(Node node, int value) {
         if(node == null){
@@ -83,11 +109,11 @@ public class BST {
             return;
         }
 
-        System.out.println(details + node.value);
+        System.out.println(node.value+ " : "+ details );
 
 
-        display(node.left, "is Left child of " + node.getValue() + " : ");
-        display(node.right, "is Right child of " + node.getValue() + " : ");
+        display(node.left, "is Left child of " + node.getValue());
+        display(node.right, "is Right child of " + node.getValue());
     }
 
 }
