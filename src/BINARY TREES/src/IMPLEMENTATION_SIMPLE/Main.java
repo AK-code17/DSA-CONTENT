@@ -1,4 +1,4 @@
-package IMPLEMENTATION;
+package IMPLEMENTATION_SIMPLE;
 
 import java.util.Scanner;
 

@@ -1,4 +1,4 @@
-package IMPLEMENTATION;
+package IMPLEMENTATION_SIMPLE;
 
 public class Easier_implementation {
     private static class Node {
