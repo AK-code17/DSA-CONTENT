@@ -12,7 +12,7 @@ public class BST {
         }
 
         public int getValue(){
-            return value;
+            return this.value;
         }
 
         public Node getLeft(){
@@ -84,7 +84,7 @@ public class BST {
         }
         
         // since a new node is added hence the height is increased by 1 . ..
-        node.height = Math.max(height(node.left), height(node.right));
+        node.height = Math.max(height(node.left), height(node.right))+1;
 
         return node;
     }
