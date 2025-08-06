@@ -45,4 +45,24 @@ public class LTC_102_BFS_Level_order_traversal {
         return ans; 
     
     }
+
+
+    public TreeNode successor(TreeNode root , int key) {
+        //base case: or edge case u can say..
+        if(root == null) return root;
+
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+
+        while(!queue.isEmpty()){
+            int list_size = queue.size();
+            TreeNode node = queue.poll();
+            if(node.left !=null) queue.offer(node.left);
+            if(node.right !=null)queue.offer(node.right);
+            if(node.val == key) return queue.poll();
+        }
+
+        return null; 
+    
+    }
 }
