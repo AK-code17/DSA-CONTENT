@@ -39,8 +39,8 @@ public class LTC_102_BFS_Level_order_traversal {
                 if(node.right !=null)queue.offer(node.right);
             }
 
-            ans.add(list);
-        }
+            ans.addFirst(list);
+        } 
 
         return ans; 
     
