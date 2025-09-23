@@ -2,7 +2,7 @@ package HEAPS.QUESTIONS;
 
 import java.util.*;
 
-class Solution {
+public class kth_largest_smallest_ele {
     public int findKthLargest(int[] nums, int k) {
         int n = nums.length;
         
@@ -24,10 +24,7 @@ class Solution {
         return pq.poll();
 
     }
-}
 
-
-public class Solution {
     public static int kthSmallest(int n,int k, int[]arr) {
         // Write your code here.
         PriorityQueue<Integer> pq = new PriorityQueue<>(Collections.reverseOrder());
@@ -52,3 +49,4 @@ public class Solution {
 
     }
 }
+

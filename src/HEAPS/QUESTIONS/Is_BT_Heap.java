@@ -1,7 +1,7 @@
 package HEAPS.QUESTIONS;
 
 
-class Solution {
+public class Is_BT_Heap{
     boolean isHeap(Node tree) {
         // code here
         // Write your code here.
