@@ -1,4 +1,6 @@
-package HEAPS.QUESTIONS;
+package GREEDY;
+
+import java.util.*;
 
 public class LTC_621_Task_Scheduler {
     /*

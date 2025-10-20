@@ -1,4 +1,4 @@
-package HEAPS.QUESTIONS;
+package GREEDY;
 
 public class LTC_55_Jump_Game {
     /*

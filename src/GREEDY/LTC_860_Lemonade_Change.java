@@ -1,4 +1,4 @@
-package HEAPS.QUESTIONS;
+package GREEDY;
 
 public class LTC_860_Lemonade_Change {
     int n = bills.length;

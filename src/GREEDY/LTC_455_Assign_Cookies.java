@@ -1,4 +1,6 @@
-package HEAPS.QUESTIONS;
+package GREEDY;
+
+import java.util.*;
 
 public class LTC_455_Assign_Cookies {
     public int findContentChildren(int[] g, int[] s) {
