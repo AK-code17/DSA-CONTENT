@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "OOP_5_AbstractDemo.INTERFACES.Main",
+            "projectName": "OOOPS_3a430b7e"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "OOP_5_AbstractDemo.Main",
+            "projectName": "OOOPS_3a430b7e"
+        },
+        {
+            "type": "java",
+            "name": "ObjectDemo",
+            "request": "launch",
+            "mainClass": "OOP_4.ObjectDemo",
+            "projectName": "OOOPS_3a430b7e"
+        },
+        {
+            "type": "java",
+            "name": "SubClass",
+            "request": "launch",
+            "mainClass": "OOP_4.SubClass",
+            "projectName": "OOOPS_3a430b7e"
+        },
+        {
+            "type": "java",
+            "name": "Run SubClass",
+            "request": "launch",
+            "mainClass": "OOP_4.SubClass",
+            "projectName": "OOOPS"
+        }
+    ]
+}
