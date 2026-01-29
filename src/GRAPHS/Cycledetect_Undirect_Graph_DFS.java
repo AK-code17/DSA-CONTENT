@@ -42,7 +42,7 @@ public class Cycledetect_Undirect_Graph_DFS {
         vis[node] = true;
 
         for(int adjNode : adjList.get(node)){
-            // either the node will be unvisited..
+            // either the node will be unvDSAisited..
             if(!vis[adjNode]) {
                 if (detect_cycle(adjNode,node,vis,adjList)) return true;
             }
