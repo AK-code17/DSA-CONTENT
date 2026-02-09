@@ -2,7 +2,7 @@ package GRAPHS;
 
 import java.util.*;
 
-public class G20_Topological_Sort_Algorithm {
+public class G22_Topological_Sort_Algorithm {
     public static void main(String[] args){
         Scanner sc = new Scanner(System.in);
         int nodes = sc.nextInt();
