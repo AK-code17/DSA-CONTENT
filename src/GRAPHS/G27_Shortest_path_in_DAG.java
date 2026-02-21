@@ -1,7 +1,7 @@
 package GRAPHS;
 import java.util.*;
 
-public class G28_Shortest_path_in_DAG {
+public class G27_Shortest_path_in_DAG {
 
 /**
  * PROBLEM: SHORTEST PATH IN A DIRECTED ACYCLIC GRAPH (DAG)
