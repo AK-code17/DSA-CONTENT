@@ -3,6 +3,8 @@ import java.util.*;
 
 public class GFG_Diagonal_Traversal {
 
+    // APPROACH 1: RECURSIVE AND HASHMAP... (BETTER)
+
 /**
  * PROBLEM: DIAGONAL TRAVERSAL OF BINARY TREE
  * * GOAL: 
@@ -60,4 +62,44 @@ public class GFG_Diagonal_Traversal {
         find_diagonals(curr_node.right , slope , map);
         
     }
-}
+
+    // APPROACH 2 : ITERATIVE (OPTIMISED)..
+    /**
+     * PROBLEM: DIAGONAL TRAVERSAL (OPTIMIZED QUEUE)
+     * * GOAL: 
+     * Achieve the most memory-efficient and fastest diagonal traversal by eliminating 
+     * auxiliary data structures like Maps or wrapper classes.
+     * * INTUITION: 
+     * We recognize that a diagonal is simply a "right-sliding" path. We use a Queue to 
+     * keep track of the "seeds" (left children) for the next diagonals. By processing 
+     * the current node's right path completely before moving to the next item in the 
+     * queue, we naturally maintain the top-to-bottom, top-right to bottom-left order 
+     * required for the output.
+     */
+
+    public ArrayList<Integer> diagonal_optimised(Node root) {
+        // add your code here.
+        ArrayList<Integer> ans = new ArrayList<>();
+        if (root == null) return ans;
+        
+        Deque<Node> que = new ArrayDeque<>();
+
+        que.offerLast(root);
+        
+        while(!que.isEmpty()){
+            Node curr_node = que.pollFirst();
+            
+            // Keep going to right because all the nodes in same slope lies on node.right..
+            while(curr_node != null){
+                ans.add(curr_node.data);
+                // if left is not null add it because it will help for the next 
+                // diagonal to traverse.. and also the left subtree comes before 
+                // the right sub-tree...
+                if(curr_node.left != null) que.offerLast(curr_node.left);
+                
+                curr_node = curr_node.right;
+            }
+        }
+
+        return ans;
+    }
