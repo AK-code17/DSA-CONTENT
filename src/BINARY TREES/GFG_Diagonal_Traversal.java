@@ -1,4 +1,4 @@
-package BINARY TREES;
+// package BINARY TREES;
 import java.util.*;
 
 public class GFG_Diagonal_Traversal {
@@ -24,6 +24,7 @@ public class GFG_Diagonal_Traversal {
         Node(int val){
             this.data = val;
         }
+    }
     public ArrayList<Integer> diagonal(Node root) {
         // add your code here.
         
@@ -103,3 +104,4 @@ public class GFG_Diagonal_Traversal {
 
         return ans;
     }
+}
