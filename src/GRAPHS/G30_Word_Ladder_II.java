@@ -1,7 +1,7 @@
 package GRAPHS;
 import java.util.*;
 
-public class G_30_Word_Ladder_II {
+public class G30_Word_Ladder_II {
     
 /**
  * PROBLEM: WORD LADDER II (THE ALL-SHORTEST-PATHS CHALLENGE)
