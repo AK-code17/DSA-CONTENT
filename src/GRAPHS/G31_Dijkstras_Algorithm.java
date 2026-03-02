@@ -3,6 +3,8 @@ import java.util.*;
 
 public class G31_Dijkstras_Algorithm {
 
+    // ALSO I added the TreeSet approach  , if in case its asked in Interview..
+
 /**
  * CORE DIJKSTRA'S ALGORITHM (OPTIMIZED)
  * * -----------------------------------------------------------------------------
@@ -74,5 +76,61 @@ public class G31_Dijkstras_Algorithm {
         }
         
         return distances;
+    }
+
+    // TREESET APPROACH : 
+    // It's make the space complexity from O(E)--> O(V)..
+    // but the time to look up to a particular nodes and erasing it is - log(V)..
+
+
+    /**
+     * DIJKSTRA VIA TREESET (THE O(V) SPACE VARIATION)
+     * * -----------------------------------------------------------------------------
+     * 1. THE GOAL: Mimic the C++ std::set behavior to keep space at strictly O(V).
+     * 2. THE MECHANISM: Instead of adding "Zombies," we find the old entry, 
+     * REMOVE it, and ADD the updated version.
+     * 3. THE CAVEAT: Java's TreeSet needs a custom Comparator that accounts 
+     * for BOTH distance AND node ID, otherwise nodes with the same distance 
+     * will be "swallowed" by the set!
+     * -----------------------------------------------------------------------------
+     */
+    public int[] dijkstra(int V, List<List<int[]>> adj, int src) {
+        int[] dist = new int[V];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[src] = 0;
+
+        // TreeSet as a balanced BST (O(log V) for add/remove)
+        // We sort by distance, then by node ID to keep unique entries!!
+        TreeSet<int[]> set = new TreeSet<>((a, b) -> {
+            if (a[1] != b[1]) return a[1] - b[1]; // Sort by distance
+            return a[0] - b[0]; // If distances equal, sort by node ID
+        });
+
+        set.add(new int[]{src, 0});
+
+        while (!set.isEmpty()) {
+            int[] current = set.pollFirst(); // Equivalent to pq.poll()
+            int node = current[0];
+            int d = current[1];
+
+            for (int[] neighbor : adj.get(node)) {
+                int adjNode = neighbor[0];
+                int weight = neighbor[1];
+
+                if (dist[adjNode] > d + weight) {
+                    // THE "UPDATE" LOGIC:
+                    // If node already exists in set, remove the OLD version..
+                    // This is only possible if dist[adjNode] was previously updated.
+                    if (dist[adjNode] != Integer.MAX_VALUE) {
+                        set.remove(new int[]{adjNode, dist[adjNode]});
+                    }
+
+                    // Update and add the NEW version..
+                    dist[adjNode] = d + weight;
+                    set.add(new int[]{adjNode, dist[adjNode]});
+                }
+            }
+        }
+        return dist;
     }
 }
