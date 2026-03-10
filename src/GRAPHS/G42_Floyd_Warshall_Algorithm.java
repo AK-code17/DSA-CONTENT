@@ -1,6 +1,6 @@
 package GRAPHS;
 
-public class G43_Floyd_Warshall_Algorithm {
+public class G42_Floyd_Warshall_Algorithm {
     /*
      * =========================================================================
      * 🛠️ 2-YEAR REFRESHER: FLOYD-WARSHALL (All-Pairs Shortest Path)
