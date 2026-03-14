@@ -22,7 +22,7 @@ public class G45_Prims_Algorithm {
  * - Space: O(V + E) — Adjacency list and the PriorityQueue.
  * -------------------------------------------------------------------------
  */
-    public int spanningTree(int V, int[][] edges) {
+    public int spanningTree_sparse_graph(int V, int[][] edges) {
         
         // 1. TOPOLOGY INITIALIZATION
         // MST requires an undirected graph representation.
@@ -74,5 +74,81 @@ public class G45_Prims_Algorithm {
         }
         
         return MST_SUM;
+    }
+
+    /**
+     * 🛰️ ARCHITECTURAL VARIANT: MATRIX-NATIVE PRIM'S (O(V²))
+     * -------------------------------------------------------------------------
+     * 🚀 STRATEGY:
+     * This implementation is optimized for DENSE GRAPHS where an Adjacency Matrix
+     * is either provided or preferred. By using a matrix, we gain O(1) edge access
+     * and superior cache locality compared to pointer-heavy Adjacency Lists.
+     *
+     * ⚖️ COMPLEXITY:
+     * - Time: O(V²) -> We perform V manual scans, each taking O(V).
+     * - Space: O(V²) -> For the matrix (if created) or O(V) auxiliary space.
+     * -------------------------------------------------------------------------
+     */
+    public int spanningTree_dense_graph(int V, int[][] edges) {
+        // 1. MATRIX INITIALIZATION
+        // We use a safe INF (1e9) to represent "No Edge." 
+        // We avoid Integer.MAX_VALUE to prevent any potential overflow issues.
+        int[][] adj = new int[V][V];
+        int INF = (int)1e9;
+        
+        for (int i = 0; i < V; i++) {
+            Arrays.fill(adj[i], INF);
+            adj[i][i] = 0; // Distance to self
+        }
+
+        // Populate the Matrix from the edge list
+        for (int[] edge : edges) {
+            int u = edge[0], v = edge[1], wt = edge[2];
+            adj[u][v] = wt;
+            adj[v][u] = wt;
+        }
+
+        // 2. STATE TRACKERS
+        int[] minEdgeWeight = new int[V]; // Smallest edge connecting node i to MST
+        boolean[] vis = new boolean[V]; // Nodes integrated into the MST cloud
+        Arrays.fill(minEdgeWeight, INF);
+        
+        minEdgeWeight[0] = 0; // Seed the algorithm at Node 0
+        int MST_Sum = 0;
+
+        // 3. CORE MST EXPANSION (V Iterations)
+        for (int iteration = 0; iteration < V; iteration++) {
+            
+            // STEP A: MANUAL MIN-SCAN (O(V))
+            // Instead of using a PriorityQueue, we scan the array to find the 
+            // cheapest unvisited node. This is more efficient in dense graphs.
+            int node = -1;
+            for (int i = 0; i < V; i++) {
+                if (!vis[i] && (node == -1 || minEdgeWeight[i] < minEdgeWeight[node])) {
+                    node = i;
+                }
+            }
+
+            // EARLY TERMINATION: If no new unvisited found then 
+            // simply break off..
+            if (node == -1 || minEdgeWeight[node] == INF) break;
+
+            vis[node] = true;
+            MST_Sum += minEdgeWeight[node];
+
+            // STEP C: NEIGHBOR UPDATE (O(V))
+            // We scan the row of the matrix for node 'u' to update all Adj_neighbors.
+            for (int adjNode = 0; adjNode < V; adjNode++) {
+                int weight = adj[node][adjNode];
+                
+                // If node 'adjNode' is not in MST and the edge (u, adjNode) is cheaper 
+                // than the previously recorded best edge for 'adjNode', we update.
+                if (!vis[adjNode] && weight < minEdgeWeight[adjNode]) {
+                    minEdgeWeight[adjNode] = weight;
+                }
+            }
+        }
+
+        return MST_Sum;
     }
 }
