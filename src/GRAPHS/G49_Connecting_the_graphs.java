@@ -11,15 +11,20 @@ public class G49_Connecting_the_graphs {
  * and REUSED to connect isolated provinces together.
  *
  * KEY INSIGHT:
- * - Count extra (redundant) edges → these are our operations budget
  * - Count provinces (isolated components) after all merges
  * - To connect x provinces we need exactly x-1 edges
- * - If extra_edges >= provinces-1 → possible, return provinces-1
- * - If extra_edges <  provinces-1 → impossible, return -1
+ * - If total edges < n-1 → impossible upfront (early exit)
+ * - Otherwise → answer is always provinces-1
+ *
+ * WHY WE DON'T NEED TO TRACK extra_edges:
+ * The early exit (edge.length < n-1) already guarantees
+ * enough edges exist. So impossibility is fully caught there.
+ * After that, extra_edges >= provinces-1 is ALWAYS true —
+ * making that check redundant.
  *
  * CORE FORMULA:
  * provinces = n - successful_merges
- * (same invariant as Number of Provinces problem)
+ * answer    = provinces - 1
  *
  * COMPLEXITY:
  * Time  → O(m * α(n)) ≈ O(m)  — beats GFG's expected O(m*n)
@@ -66,7 +71,7 @@ class DisjointSetUnion {
 
     /*
      * FIND ROOT (Iterative — avoids StackOverflow on large inputs)
-     * -----------------------------------------t-----------------
+     * ----------------------------------------------------------
      * Walks up parent pointers until root is found.
      * Root identified by: parent[node] == node
      *
@@ -97,17 +102,13 @@ class DisjointSetUnion {
      *
      * RETURN VALUE:
      * true  → successfully merged two DIFFERENT components
-     * false → u and v ALREADY in same component (redundant edge!)
-     *
-     * WHY THIS RETURN VALUE MATTERS HERE:
-     * false → this edge is "extra" → can be reused to connect provinces
-     * true  → this edge was useful → reduces province count by 1
+     * false → u and v ALREADY in same component (redundant edge)
      */
     public boolean UnionbySize(int u, int v) {
         int root_u = find_root(u);
         int root_v = find_root(v);
 
-        // already in same component — this is a redundant/extra edge
+        // already in same component — redundant edge, no merge needed
         if (root_u == root_v) return false;
 
         // attach smaller tree under larger tree (union by size)
@@ -119,7 +120,7 @@ class DisjointSetUnion {
             size[root_v] += size[root_u]; // update size of new root
         }
 
-        return true; // merge was successful, province count drops by 1
+        return true; // merge successful, province count drops by 1
     }
 }
 
@@ -127,42 +128,44 @@ class DisjointSetUnion {
 class Solution {
     public int Solve(int n, int[][] edge) {
 
-        DisjointSetUnion dsu = new DisjointSetUnion(n);
-        int extra_edges = 0;  // redundant edges = our budget for reconnecting
-        int merged_nodes = 0; // successful merges = province reductions
+        /*
+         * EARLY EXIT:
+         * To connect n nodes, minimum n-1 edges are required.
+         * If we don't even have that many edges, impossible upfront.
+         * This also makes tracking extra_edges redundant — if we
+         * pass this check, enough edges always exist to connect.
+         */
+        if (edge.length < n - 1) return -1;
 
+        DisjointSetUnion dsu = new DisjointSetUnion(n);
+        int merged = 0; // counts successful merges = province reductions
+
+        /*
+         * PROCESS ALL EDGES:
+         * Every successful union reduces province count by 1.
+         * Redundant edges (same component) are simply skipped —
+         * we no longer need to count them since impossibility
+         * is already handled by the early exit above.
+         */
         for (int[] ed : edge) {
-            // if it returns false means we have an extra edge , bcz
-            // it only return false if the u,v vertices are already
-            // present in the group , so we can use this extra edge
-            // for the vertices which were not able to merge into group..
-            if (!dsu.UnionbySize(ed[0], ed[1])) extra_edges++;
-            // else returns true , means a merge happened..
-            else merged_nodes++;
+            if (dsu.UnionbySize(ed[0], ed[1])) merged++;
         }
 
         /*
          * PROVINCE COUNT:
          * Start with n isolated provinces.
          * Every successful merge reduces province count by exactly 1.
-         * Therefore: provinces = n - merged_nodes
+         * Therefore: provinces = n - merged
          *
-         * Example (from GFG):
-         * n=4, edges=[[0,1],[0,2],[1,2]]
-         * merged=2, extra=1
-         * provinces = 4-2 = 2
-         * extra(1) >= provinces-1(1) → return 1 ✅
+         * Example 1: n=4, edges=[[0,1],[0,2],[1,2]]
+         * merged=2 → provinces=2 → return 1 ✅
+         *
+         * Example 2: n=6, edges=[[0,1],[0,2],[0,3],[1,2],[1,3]]
+         * merged=3 → provinces=3 → return 2 ✅
          */
-        int provinces = n - merged_nodes;
-
-        // already fully connected, no operations needed
-        if (provinces == 1) return 0;
-
-        // because for x provinces minimum x-1 edges are needed , so if
-        // edges are less than provinces-1 then its not possible to connect them...
-        else if (extra_edges < provinces - 1) return -1;
-
-        // else return the minimum needed..
+        int provinces = n - merged;
+        
+        // minimum edges needed to connect x provinces = x-1
         return provinces - 1;
     }
 }
