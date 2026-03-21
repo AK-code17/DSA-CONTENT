@@ -1,7 +1,7 @@
 package GRAPHS;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Path;
+import java.util.*;
 
 public class G51_Number_of_Islands_II {
     /*
@@ -30,7 +30,7 @@ public class G51_Number_of_Islands_II {
  *
  * DUPLICATE CELL HANDLING (the critical guard):
  * If the same cell is added twice:
- * → Second time: is_present() returns true → skip Islands++
+ * → Second time: is_present() returns true → skip islands++
  * → mark_presence() must NOT be called again on duplicates
  * → Calling it again resets parent[node]=node, corrupting the
  *   DSU tree (node detaches from its merged component)
@@ -64,10 +64,37 @@ public class G51_Number_of_Islands_II {
  * mark_presence() → activates a cell when land is added
  * is_present()    → checks if a cell is active land
  *
- * WHY -1 AS SENTINEL?
- * Valid node indexes are 0 to rows*cols-1 — all non-negative.
- * So -1 is safely outside the valid range → perfect sentinel.
- * No valid parent pointer will ever be -1 after activation.
+ * WHY -1 AS SENTINEL AND NOT A SEPARATE boolean[] visited?
+ * ----------------------------------------------------------
+ * Two obvious approaches:
+ *
+ * Option A: Separate boolean[] array
+ * boolean[] isLand = new boolean[rows*cols];
+ * → isLand[cell] = true when cell is added
+ * → extra O(rows*cols) space
+ * → two arrays to maintain (parent[] AND isLand[])
+ * → two reads per presence check
+ *
+ * Option B: Sentinel value in parent[] (what we use)
+ * parent[i] = -1  → inactive (water)
+ * parent[i] = i   → active (land, own root)
+ * parent[i] = x   → active (land, merged under x)
+ *
+ * WHY -1 IS SAFE AS SENTINEL:
+ * Valid parent values = 0 to rows*cols-1 (all non-negative)
+ * -1 is outside this range → never a valid parent pointer
+ * → zero collision risk with real values
+ *
+ * WHY OPTION B IS BETTER:
+ * → No extra boolean[] array → saves O(rows*cols) space
+ * → Single array to maintain → simpler code
+ * → Single read per presence check → faster
+ * → parent[] already exists → reuse it for free
+ *
+ * THE TRADEOFF:
+ * → Slightly less readable than explicit boolean[]
+ * → Requires understanding the sentinel convention
+ * → That's exactly why this comment exists
  *
  * OPTIMIZATIONS:
  * 1. Union by Size  → attach smaller tree under larger
@@ -86,13 +113,19 @@ class DisjointSetUnion {
      * Initialize all cells as INACTIVE (water).
      * parent[i] = -1 means this cell has not been added as land yet.
      * size[i] = 1 so that when a cell IS activated, its size is ready.
+     *
+     * WHY NOT boolean[] for tracking active cells?
+     * → sentinel -1 in parent[] serves double duty:
+     *   tracks activation AND acts as parent pointer
+     * → saves O(rows*cols) extra space vs boolean[]
+     * → single array read per presence check vs two
      */
     DisjointSetUnion(int nodes) {
         parent = new int[nodes];
         size = new int[nodes];
 
         for (int i = 0; i < nodes; i++) {
-            parent[i] = -1; // -1 = inactive/water, not yet added as land
+            parent[i] = -1; // sentinel: inactive until mark_presence() called
             size[i] = 1;    // default size ready for when cell gets activated
         }
     }
@@ -129,18 +162,46 @@ class DisjointSetUnion {
      * Walks up parent pointers to find the root (representative)
      * of this cell's island component.
      *
-     * PATH HALVING (parent[node] = parent[parent[node]]):
-     * Each node skips one level and points to its grandparent.
-     * Flattens the tree in a SINGLE pass — no second pass needed.
-     * Future find_root calls on same path will be faster.
+     * PATH HALVING — WHY GRANDPARENT SPECIFICALLY?
+     * We want to flatten the tree but have two choices:
      *
-     * WHY ITERATIVE?
+     * Option A: Full Path Compression
+     * → find the root first (one full pass up)
+     * → then rewire EVERY node directly to root (second pass)
+     * Before:  6 → 5 → 4 → 3 → 2 → 1 → 0(root)
+     * After:   6 → 0, 5 → 0, 4 → 0 (all point to root)
+     *
+     * Option B: Path Halving (what we use)
+     * → single pass up the tree
+     * → each node skips ONE level → points to grandparent
+     * Before:  6 → 5 → 4 → 3 → 2 → 1 → 0(root)
+     * After:   6 → 4 (skipped 5)
+     *          4 → 2 (skipped 3)
+     *          2 → 0 (skipped 1)
+     *
+     * WHY GRANDPARENT AND NOT ROOT DIRECTLY?
+     * Because we don't KNOW where root is yet!
+     * We're still walking UP to find it.
+     * Grandparent = the furthest we can safely jump
+     * in a single step without knowing the root.
+     *
+     * WHY PATH HALVING OVER FULL COMPRESSION?
+     * Full compression: 2 passes (find root, then rewire)
+     * Path halving:     1 pass  (flatten as you walk up)
+     * Same O(α(N)) complexity — path halving does it
+     * in HALF the work. That's why we chose it.
+     *
+     * After a few find_root calls on same path:
+     * → tree becomes nearly flat anyway
+     * → future calls approach O(1)
+     *
+     * WHY ITERATIVE AND NOT RECURSIVE?
      * Recursive version risks StackOverflow for large grids.
      * Iterative is always safe regardless of tree depth.
      */
     public int find_root(int node) {
         while (node != parent[node]) {
-            parent[node] = parent[parent[node]]; // path halving — skip to grandparent
+            parent[node] = parent[parent[node]]; // jump to grandparent
             node = parent[node];                 // move up towards root
         }
         return node; // parent[node]==node means this IS the root
@@ -152,6 +213,38 @@ class DisjointSetUnion {
      * Merges the islands containing cells u and v.
      * Always attaches smaller component under larger component.
      * Keeps tree height bounded → find_root stays fast.
+     *
+     * WHY SIZE AND NOT RANK?
+     * Two strategies to keep tree shallow:
+     *
+     * Option A: Union by Rank
+     * → rank = approximate height of the tree
+     * → always attach lower rank under higher rank
+     * → rank only increases when two equal-rank trees merge
+     * PROBLEM: after path compression, actual height changes
+     * but rank is NEVER updated (stale approximation)
+     * → rank becomes inaccurate over time
+     *
+     * Option B: Union by Size (what we use)
+     * → size = actual number of nodes in component
+     * → always attach smaller component under larger
+     * → size is always accurate — updated on every union
+     *
+     * WHY SIZE KEEPS TREE SHALLOW:
+     * When you attach small under large:
+     * → small tree's depth increases by at most 1
+     * → large tree's depth unchanged
+     * → overall tree height grows at most O(log N)
+     *
+     * Visual:
+     * Size 3 tree + Size 1 tree:
+     *     A              A
+     *    / \    →       /|\
+     *   B   C          B C D  ← D under A, depth unchanged for A,B,C
+     *
+     * BOTTOM LINE:
+     * Rank  = works but uses stale approximation
+     * Size  = works and always accurate → we use size
      *
      * RETURN VALUE:
      * true  → successfully merged two DIFFERENT islands
@@ -167,7 +260,7 @@ class DisjointSetUnion {
 
         if (root_u == root_v) return false; // same island, no merge needed
 
-        // attach smaller tree under larger tree
+        // attach smaller tree under larger tree (union by size)
         if (size[root_u] > size[root_v]) {
             parent[root_v] = root_u;
             size[root_u] += size[root_v];
@@ -182,6 +275,37 @@ class DisjointSetUnion {
 
 
 class Solution {
+
+    /*
+     * DIRECTIONS — Four cardinal sides
+     * ----------------------------------------------------------
+     * Islands are connected via shared SIDES only (not diagonals).
+     * These four directions cover: LEFT, RIGHT, UP, DOWN.
+     *
+     * WHY STATIC FINAL?
+     * This array never changes — it's a constant.
+     * static = one copy shared across all instances (saves memory)
+     * final  = prevents accidental modification
+     *
+     * WHY 2D DIRECTIONS AND NOT 1D OFFSETS?
+     * Alternative: int[] offsets = {-cols, cols, -1, 1}
+     * → saves one multiplication per neighbor
+     * → BUT left/right offsets cause wrap-around bugs:
+     *   end of row 0 + 1 = start of row 1 (wrong union!)
+     * → needs extra boundary checks → messier code
+     * → modern JIT compilers optimise multiplication anyway
+     * → real world performance difference = negligible
+     *
+     * 2D directions = cleaner, safer, easier to debug.
+     * Readable code > micro-optimisation here.
+     */
+    private static final int[][] DIRECTIONS = {
+        {0, -1},  // left
+        {0,  1},  // right
+        {-1, 0},  // up
+        {1,  0}   // down
+    };
+
     public List<Integer> numOfIslands(int rows, int cols, int[][] operators) {
 
         List<Integer> ans = new ArrayList<>();
@@ -190,20 +314,6 @@ class Solution {
         DisjointSetUnion dsu = new DisjointSetUnion(rows * cols);
         int islands = 0;
 
-        /*
-         * DIRECTIONS — Four cardinal sides
-         * ----------------------------------------------------------
-         * Islands are connected via shared SIDES only (not diagonals).
-         * These four directions cover: LEFT, RIGHT, UP, DOWN.
-         * Static final because this never changes — it's a constant.
-         */
-        int[][] directions = {
-            {0, -1},  // left
-            {0,  1},  // right
-            {-1, 0},  // up
-            {1,  0}   // down
-        };
-
         for (int[] operator : operators) {
 
             int row = operator[0];
@@ -211,6 +321,7 @@ class Solution {
 
             /*
              * 2D → 1D CELL INDEX MAPPING:
+             * ----------------------------------------------------------
              * DSU operates on flat integer indexes.
              * (row, col) → row * cols + col gives a unique index
              * for every cell in the grid, ranging 0 to rows*cols-1.
@@ -219,55 +330,66 @@ class Solution {
              * (0,0)=0  (0,1)=1  (0,2)=2
              * (1,0)=3  (1,1)=4  (1,2)=5
              * (2,0)=6  (2,1)=7  (2,2)=8
+             *
+             * WHY THIS FORMULA?
+             * Each row has exactly 'cols' cells.
+             * Row r starts at index r*cols.
+             * Column c adds c more → r*cols + c.
+             * Every (row,col) pair maps to a UNIQUE index. ✅
              */
             int cell = row * cols + col;
 
             /*
-             * DUPLICATE GUARD — The critical check:
+             * DUPLICATE GUARD + NEIGHBOR CHECK
              * ----------------------------------------------------------
-             * If cell is already active land → skip everything.
-             * DO NOT increment islands (not a new island).
-             * DO NOT call mark_presence() again — this would reset
-             * parent[cell]=cell, detaching it from its merged component
-             * and corrupting the entire DSU tree structure.
+             * WHY CHECK is_present BEFORE everything?
+             * If cell is already active land → skip ALL processing.
+             * Two reasons:
              *
-             * Only if cell is NEW:
-             * → mark it as active land
-             * → increment island count (new isolated island)
-             */
-            if (!dsu.is_present(cell)) {
-                dsu.mark_presence(cell); // activate cell BEFORE union checks
-                islands++;               // new cell = new island initially
-            }
-
-            /*
-             * NEIGHBOR CHECK — Merge with adjacent islands:
-             * ----------------------------------------------------------
-             * For each of the 4 directions:
-             * 1. Compute neighbor coordinates (x, y)
-             * 2. Bounds check → must be within grid
-             * 3. Presence check → neighbor must be active land
-             * 4. Union → if merge succeeds (different islands) → islands--
+             * 1. Don't increment islands (not a new island)
              *
-             * WHY mark_presence BEFORE this loop?
-             * union() calls find_root() on the current cell.
-             * find_root() needs parent[cell] != -1 to work correctly.
-             * If we mark after, find_root() would follow -1 → crash.
+             * 2. Don't call mark_presence() again:
+             *    → would reset parent[cell] = cell
+             *    → detaches cell from its merged component
+             *    → corrupts entire DSU tree structure
+             *    → THIS WAS THE ORIGINAL BUG IN THIS CODE
+             *
+             * WHY NEIGHBOR LOOP INSIDE THIS GUARD?
+             * Duplicate cells don't need neighbor checks either:
+             * → cell is already merged with its neighbors
+             * → running union() again = redundant work
+             * → moving loop inside guard saves 4 neighbor checks
+             *   per duplicate operator — real saving for
+             *   duplicate-heavy inputs
+             *
+             * WHY mark_presence BEFORE neighbor loop?
+             * union() calls find_root() on current cell.
+             * find_root() needs parent[cell] != -1 to work.
+             * If we mark after the loop → find_root crashes.
+             * Order matters: mark first, then union.
              *
              * WHY islands-- only on successful union?
              * Two cells already in same island → union returns false
-             * → they were already counted as one island → no change.
-             * Only a NEW merge actually reduces the island count.
+             * → already counted as one island → no change needed.
+             * Only a NEW merge actually reduces island count.
              */
-            for (int[] side : directions) {
-                int x = row + side[0];
-                int y = col + side[1];
-                int adjCell = x * cols + y;
+            if (!dsu.is_present(cell)) {
+                dsu.mark_presence(cell); // activate BEFORE union calls
+                islands++;               // new cell = new island initially
 
-                // bounds check + presence check before attempting union
-                if (x >= 0 && x < rows && y >= 0 && y < cols && dsu.is_present(adjCell)) {
-                    // everytime a merge happens then the islands gets reduced..
-                    if (dsu.UnionbySize(cell, adjCell)) islands--;
+                for (int[] side : DIRECTIONS) {
+                    int x = row + side[0];
+                    int y = col + side[1];
+
+                    // bounds check first — only compute adjCell if in bounds
+                    // avoids unnecessary multiplication for out-of-bounds cells
+                    if (x >= 0 && x < rows && y >= 0 && y < cols) {
+                        int adjCell = x * cols + y;
+                        if (dsu.is_present(adjCell)) {
+                            // everytime a merge happens then the islands gets reduced..
+                            if (dsu.UnionbySize(cell, adjCell)) islands--;
+                        }
+                    }
                 }
             }
 
