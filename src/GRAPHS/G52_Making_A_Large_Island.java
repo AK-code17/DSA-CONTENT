@@ -10,9 +10,10 @@ public class G52_Making_A_Large_Island {
  * Find the largest island possible after this flip.
  *
  * TWO-PASS APPROACH:
- * Pass 1 → Build all existing islands using DSU.
+ * Pass 1 → Build all existing islands from cells having  =1 , using DSU.
  *           Track max island size from existing 1s.
  * Pass 2 → For each 0 cell, simulate flipping it to 1.
+            Add all the 4 directions's cell size = but their parent must be unique and they must be cell = 1, 
  *           Sum sizes of all UNIQUE neighboring islands + 1.
  *           Track max across all flips.
  *
@@ -40,7 +41,6 @@ public class G52_Making_A_Large_Island {
  * When a land cell is activated via mark_land(), size[i] = 1.
  * is_land() checks size[node] != 0 — zero means water, nonzero means land.
  * This is intentional: size[] already tracks component presence.
- * Adding a separate boolean[] active would be a third array
  * solving a problem that doesn't exist.
  *
  * OPTIMIZATIONS:
@@ -171,13 +171,7 @@ class Solution {
 
     /*
      * DIRECTIONS — Four cardinal sides only (no diagonals).
-     * Static final → one shared copy, never modified.
-     *
-     * WHY 2D AND NOT 1D OFFSETS?
-     * 1D offsets (int[] = {-cols, cols, -1, 1}) avoid multiplication
-     * but cause row wrap-around bugs: end of row 0 + 1 = start of row 1.
-     * Needs extra boundary checks → messier than 2D.
-     * Modern JIT compilers optimise the multiplication anyway.
+     * Static final → one shared copy, never modified..
      */
     private static final int[][] DIRECTIONS = {
         {0,  1},  // right
@@ -198,17 +192,14 @@ class Solution {
          * ----------------------------------------------------------
          * For each land cell (grid[r][c] == 1):
          * → mark it as land in DSU (size = 1)
-         * → union with already-active neighbors
+         * → union with already-active neighbors 4 directions adjacency..
          * → update max_island with current component size
          *
          * WHY MARK BEFORE UNION?
-         * UnionbySize calls find_root() → size must be set first
-         * so is_land() returns true for the current cell.
-         * Marking first → union → correct order.
+         * because if it has a adjcaent cell = 1, then if they are grouped together then the returning size will also include the current cell , so if we won't mark this cell they we may get reduced island size..
          *
-         * WHY UPDATE max_island INSIDE THIS LOOP?
-         * Handles edge case: all-1s grid (no 0s exist to flip).
-         * Pass 2 never runs → max_island from here is the answer.
+         * WHY UPDATE max_island after four directions loop?
+         * because after all the possible grouping from all adjacent dirctions , getting the size at last is good , because each merge may reduce the island count but then increment the size of island so updating after helps..
          *
          * 2D → 1D MAPPING: cell = r * cols + c
          * Unique index for every (r,c) in [0, rows*cols-1].
@@ -232,7 +223,7 @@ class Solution {
                         }
                     }
 
-                    // update after unions — component may have grown
+                    // update after unions — component may have grown also we first merge all the possibles adjcently and then summ up at end..
                     max_island = Math.max(max_island, dsu.get_size(cell));
                 }
             }
@@ -243,10 +234,10 @@ class Solution {
          * ----------------------------------------------------------
          * For each water cell (grid[r][c] == 0):
          * → check all 4 neighbors
-         * → sum sizes of UNIQUE neighboring island components
-         * → +1 for the flipped cell itself (potential_size starts at 1)
-         * → update max_island
-         *
+         * → if cell is 1 and its parent cell is unvisited ,then add the size of its island.. keep this for all 4 sides..
+         * → sum sizes of UNIQUE neighboring island components.
+         * → HERE WE ARE NOT ACTUALLY GROUPING THE 0 WITH THE ADJACENT CELLS OF 1 , BUT ASSUMING THAT ITS MERGED , and then updating the max_island , with current_max_size+1 , +1 for itself if we assumed that it got flipped to 1..
+        
          * WHY int[4] INSTEAD OF HASHSET?
          * A 0 cell has at most 4 neighbors — bounded, never more.
          * HashSet per 0-cell means:
@@ -261,9 +252,11 @@ class Solution {
          * → max 4 linear comparisons for dedup → constant time
          *
          * HOW int[4] WORKS — flat growing list, not direction-indexed:
-         * neighborRoots[0..rootCount-1] = roots seen so far.
+         * we create a 4 sized int[] indicating as the adjacent neighbours..
          * Before adding a new root → scan list → skip if already present.
-         * Since max size = 4, linear scan = O(1) always.
+         * else add the current parent into the current index..
+         * so we start initailly with parent_cnt = 0, and we search the array ,parent count times like for cnt=0 , so 0 times , for 1 then 1 times , and if the same parent is not present their , we add else skip..
+         * Since max size = 4, linear scan = O(4) ~ almost constant.
          *
          * Example (no double-counting):
          * Grid: 1 1
@@ -304,6 +297,7 @@ class Solution {
 
                         // Linear scan for duplicate root — max 4 iterations, always O(1)
                         boolean alreadySeen = false;
+                        // counting the rootCount times , is optimised since we only need to scan for currently added parents. , if we added 3 parents then we need to scan through only 3 places not 4 because that's not seen till now...
                         for (int i = 0; i < rootCount; i++) {
                             if (neighborRoots[i] == root) {
                                 alreadySeen = true;
@@ -318,6 +312,7 @@ class Solution {
                     }
                 }
 
+                // adding after all the checks ensures we take the maximized result once, instead of calling this each time a merge happens..
                 max_island = Math.max(max_island, potential_size);
             }
         }
